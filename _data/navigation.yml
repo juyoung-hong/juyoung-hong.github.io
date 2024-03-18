@@ -8,5 +8,5 @@ main:
 docs:
   - title: Computer Science
     children:
-      - title: "Python"
-        url: /categories/python/
+      - title: "JAVA"
+        url: /categories/#java/
