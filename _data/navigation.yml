@@ -10,3 +10,5 @@ docs:
     children:
       - title: "JAVA"
         url: /categories/#java/
+      - title: "WEB"
+        url: /categories/#web/
