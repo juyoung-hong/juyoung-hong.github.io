@@ -7,3 +7,9 @@ main:
     url: /tags/
   - title: "About"
     url: /about/
+
+docs:
+  - title: ETC
+    children:
+      - title: "MEMO"
+        url: /categories/#memo/
