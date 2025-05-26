@@ -9,6 +9,14 @@ main:
     url: /about/
 
 docs:
+  - title: Computer Science
+    children:
+      - title: "Java"
+        url: /categories/#java/
+  - title: Statistics
+    children:
+      - title: "Mathematics"
+        url: /categories/#math/
   - title: ETC
     children:
       - title: "MEMO"
