@@ -284,3 +284,73 @@ for (초기화; 종료조건; 조건값 증가){
 **label:** <br>
 for 루프를 두개 이상 쓰거나, while 루프를 두개 이상 사용할 경우, 바깥쪽 루프의 시작점으로 이동하려고 할 때 label을 사용함 <br>
 {: .notice--info}
+
+## 배열
+
+- 배열: 한가지 타입에 대해서 하나의 변수에 여러개의 데이터를 넣을 수 있음 (배열의 index는 0부터 시작함)
+- 배열은 지역변수라고 하더라도 배열의 크기만 정해주면, 초기값을 초기화 하지않아도 기본값이 할당된 채로 사용할 수 있음
+- 얼마나 자주 사용하는지, 어디에서 사용하는지를 확인하여 메소드에서 선언할지 또는 클래스의 인스턴스 변수로 선언할지 결정하면 됨 (static 변수를 사용하면 객체를 생성할때마다 인스턴스 변수를 새로 만들지 않음)
+
+```java
+int [] lottoNumbers = new int[7]; // 대괄호는 타입과 변수 사이에 위치해도 됨 (많이 사용하는 방식)
+int lottoNumbers[]; // 변수명 뒤에 위치해도 됨
+String [] strings=null; // 배열과 같은 참조 자료형을 선언할때 명시적으로 무소유의 상태를 선언할 수도 있음 (사용시에는 반드시 초기화 후 사용해야함)
+int lottoNumbers = {5, 12, 23, 25, 38, 41, 2}; // 중괄호를 사용하는 경우에는 한번에 변수선언 및 초기화가 이루어져야함 (보통 절대 변경되지 않는 값을 지정할때 이렇게 사용함)
+```
+
+**toString:** <br>
+참조 자료형은 public String toString()이라는 메소드를 만들어줘야만 원하는 내용이 출력됨 <br>
+그렇지 않으면 "타입이름@고유번호"로 내용이 출력됨 <br>
+{: .notice--info}
+
+### 2차원 배열
+
+```java
+int [][] twoDim = new int[2][3]; // twoDim[0]은 int가 아닌 배열임, twoDim[0][0]이 int임.
+twoDim = new int[2][]; // 1차원 크기만 지정하고, 2차원 크기를 지정하지 않을수도 있음. 이와같이 선언하면 2차원 배열의 공간의 크기를 서로 다르게 지정할 수 있음
+twoDim[0] = new int[3];
+twoDim[1] = new int[2];
+int [][] twoDim = { {1, 2, 3}, {4, 5, 6} }; // 2차원 배열 선언 및 초기화
+```
+
+### 배열의 길이
+
+```java
+oneDim.length // 배열의 길이는 .length로 알 수 있음
+twoDim[0].length
+twoDim[1].length // 2차원 배열의 길이는 각 1차원 배열에 .length로 알 수 있음
+```
+
+- 배열의 값을 출력하고자 하는 경우, for 또는 while 문을 사용하여 수행함
+- .length를 사용하면 배열의 길이를 하드코딩하지 않고 유연하게 가져올 수 있으나, for 문 안에 직접 넣는 것은 성능적 측면에 효과적이지 않으므로 아래와 같이 수행하는 것이 권장됨
+
+```java
+int twoDimLength = twoDim.length;
+for (int oneLoop=0;oneLoop<twoDimLength;oneLoop++){
+  int twoDimOneLength=twoDim[oneLoop].length;
+  for(int twoLoop=0;twoLoop<twoDimOneLength;twoLoop++){
+    System.out.println("twoDim["+oneLoop+"]["+twoLoop+"]="+twoDim[oneLoop][twoLoop]);
+  }
+}
+```
+
+### Collection을 위한 for Loop
+
+```java
+for(타입이름 임시변수명: 반복대상객체){
+  // 반복문
+}
+for (int[] dimArray:twoDim){
+  for(int data:dimArray){
+    System.out.println(data);
+  }
+}// 이렇게 사용하면 편리하지만, index를 알 수 없는 단점이 있어 위치를 확인하고자 하는 경우에는 임시 변수를 둬야함 (세미콜론이 두개 있는 for루프 사용)
+```
+
+### 자바 실행시 원하는 값을 넘겨주기
+
+클래스 이름 뒤에 공백으로 분리한 문자열을 나열하면, 이 문자열들이 args라는 배열에 전달됨
+
+```bash
+java ArrayMain a b c d
+```
