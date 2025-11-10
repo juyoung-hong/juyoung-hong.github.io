@@ -140,6 +140,9 @@ css 이름 뒤 공백(>) 후 태그로 selector 문법 적용
 
 - \> : 직계자식에만 적용함
 - 공백 : 모든 자식에게 적용함
+- input[type=text]: input 태그인데, type이 text인 것만 적용
+- 콤마로 태그(클래스명)를 구분하면, 여러개의 태그에 적용 가능
+- nth-child(숫자): 순서를 기준으로 selector를 적용하고 싶은 경우
 
 **navbar 클래스 안에 있는 모든 li 태그에 적용**
 
@@ -201,4 +204,54 @@ div박스가 2개 이상인데, 테두리가 겹치는 경우 margin도 합쳐�
 padding, border 값들은 width와 관계 없음에 주의 <br>
 box-sizing: border-box 를 주면, padding, border 등을 모두 포함한 영역에 적용하도록 (실제 눈에 보이는 영역) 할 수 있음 <br>
 box-sizing: border-box, body - margin:0 등을 CSS 파일 최상단에 저장해두면 작업하기 쉬움 (normalize.css - 브라우저간 호환성 해결 코드) <br>
+{: .notice--info}
+
+## form
+
+- action: form에 작성한 내용이 어디로 전달될지, method: 어떤 방식으로 전달될지 정의
+- type: password, email, text 등 타입 정의, value: 기본 값, placeholder: 배경 글자
+- select & option: drop-down 메뉴를 만들 수 있음
+- textarea: 드래그 해서 원하는 크기로 만들 수 있음
+- label 태그: input 태그의 id와 label 태그의 for 속성을 맞춰주면 글자를 선택해도 체크되는 효과가 생김
+
+## table
+
+- tr: 가로줄 만들 때 사용
+- td: 세로줄 만들 때 사용 (th: 셀안에 있는 값이 굵어짐)
+- tr을 먼저 만들고, tr 하위에 td를 만들어서 사용함
+- thead: 제목행에 대한 분류 및 스타일링을 위해 사용
+- tbody: 일반 행은 여기에 작성함
+- 셀간 간격을 제거하고 싶은 경우, border-collapse: collapse로 줌
+- colspan 속성: 셀 merge
+
+**vertical-align:** <br>
+inline/inline-block 요소간의 세로 정렬을 수행할때 사용함 (ex. 붙어있는 글자들간의 사이즈 크기가 있는 경우) <br>
+{: .notice--info}
+
+## pseudo-class
+
+- cursor 속성: 마우스를 갖다 댈때 포인터 모양 변경
+- hover: 마우스를 갖다 댈 때 스타일 속성 변경
+- active: 클릭하는 중에 변경되는 스타일 속성
+- focus: 커서가 찍혀있을때 스타일
+- link: 방문하기 전 링크의 스타일 속성
+- visited: 방문한 후 링크의 스타일 속성
+
+```css
+.btn:hover{
+  background-color: chocolate;
+}
+```
+
+**순서:** <br>
+동시에 적용할때는 hover, focus, active 순서로 사용해야함 <br>
+{: .notice--info}
+
+## 클래스 작명 법
+
+- (Object Oriented CSS) 공통 클래스(뼈대)와 개별 적용할 클래스(색상)를 각각 만들어서 클래스를 두개 적용하면 좋음: CSS 양이 줄어들고, 유지보수가 편리해짐
+- (Block__Element--Modifier) 클래스 명을 작명할때 "chunk__역할--세부특징" 으로 작명하면 고민을 덜 할수 있음
+
+**요즘:** <br>
+요즘 React, Vue 등을 활용하여 개발하게 되면 Component 단위로 개발하게 되고, 하나의 CSS 파일에 전체 내용을 담지 않으므로 이러한 네이밍 컨벤션이 별로 의미가 없을 수 있음 <br>
 {: .notice--info}
