@@ -104,6 +104,10 @@ body {
 
 media query 문법: 브라우저 폭이 1200px 이하인 경우, 아래의 클래스명을 적용한다는 뜻 (여러개 사용하는 경우 가장 밑에 있는 것을 우선적으로 적용함)
 
+media query는 항상 CSS의 가장 아래에 있어야 잘 작동함
+
+부트스트랩 갖은 것들을 사용하면 반응형 레이아웃, 컴포넌트를 매우 빠르게 만들 수 있음
+
 ```css
 @media screen and (max-width: 1200px){
   .main-title{
@@ -115,5 +119,49 @@ media query 문법: 브라우저 폭이 1200px 이하인 경우, 아래의 클�
 **break point:** <br>
 - break point 기준 px 값은 다른 사람들이 많이 사용하는 것으로 사용하는 것을 권장함 <br>
 - 너무 많아지면 관리하기가 어려우므로 최대 5개 이내를 권장함 <br>
+- 반응형 레이아웃을 만들때는 PC용을 먼저 만들면 쉬움 <br>
 {: .notice--info}
 
+# Font Awesome
+
+- 이미지 대신 라이브러리를 사용하여 쉽게 아이콘 사용 가능
+
+## 설치 방법
+
+1. CDN
+  - cdnjs 검색 후 all.min.css 파일을 html 파일 head 태그에 첨부하면 끝
+  - 장점: 간편하고, 속도가 매우 빠름
+  - 단점: 해당 사이트가 다운되면 우리 사이트도 다운될 수 있음
+
+2. 직접 파일 다운로드 후 head 태그에 첨부
+
+## 사용 방법
+
+Font Awesome 사이트의 Icons 메뉴에서 아이콘을 검색하여 선택하고, html 예제 코드를 복사 후 첨부
+
+해당 아이콘은 글자이기 때문에 font-size 등 style을 조정하면 아이콘의 스타일을 조정할 수 있음
+
+# Transition 속성
+
+1. 시작 스타일 제작
+2. 최종 스타일 제작
+3. 언제 변하는지 이벤트 확인
+4. Transition으로 애니메이션 효과 주기
+
+시작 스타일에 transition 속성 추가
+
+```css
+.start-style {
+  opacity: 0;
+  transition: all 1s;
+}
+.end-style:hover {
+  opacity: 1;
+}
+```
+
+마우스를 클릭했을 때 등은 css로 구현할 수 없으니, java script 등을 사용하는 것이 필요함
+
+**transition 속도 조정:** <br>
+- transition-timing-function을 통해서 애니메이션의 전환 속도를 조정할 수 있음 <br>
+{: .notice--info}
