@@ -165,3 +165,46 @@ Font Awesome 사이트의 Icons 메뉴에서 아이콘을 검색하여 선택하
 **transition 속도 조정:** <br>
 - transition-timing-function을 통해서 애니메이션의 전환 속도를 조정할 수 있음 <br>
 {: .notice--info}
+
+# Bootstrap
+
+- 직접 CSS를 작성할 필요 없이 필요한것을 bootstrap 문서에서 검색한 후 붙여넣기 하면되니, 작업 시간이 매우 빨라질 수 있음
+- 개발 시간을 단출할 수 있는 Utility class를 제공함 (ex. mt-3 등)
+- 반응형 레이아웃을 만들기가 매우 쉬움 (ex. md 등 조건 추가)
+- 단점은 200kb 정도로 용량을 어느정도 차지함
+
+## 설치
+
+1. bootstrap.min.css (head 태그에 삽입)
+2. bootstrap.bundle.min.js (body 태그 끝나기 전에 삽입)
+
+위 두파일을 가져와서 HTML 파일에 넣어야 사용가능함
+
+**Custom:** <br>
+- 부트스트랩은 뼈대 디자인이므로 custom 디자인을 넣고 싶은 경우 css 파일을 하나 더 작성해서 넣으면 됨 <br>
+- 부트스트랩을 사용하는 경우에는 모바일 레이아웃을 먼저 만들면 쉬움 <br>
+{: .notice--info}
+
+# CSS 덮어쓰기
+
+1. 같은 클래스 명을 더 하단에 사용하기
+2. 우선순위를 높이기
+  - !important > style 태그 > id > class
+3. specificity 점수 높이기
+
+```css
+.main-background .custom{
+  color: green;
+}
+
+.custom {
+  color: red;
+}
+```
+
+위 상황에서 .custom이 더 아래 있음에도 셀렉터로인한 우선순위로 위의 green이 적용됨
+
+**좋은 코드:** <br>
+- 나중에 수정 및 관리가 쉬운 코드 (가독성 등)를 작성 <br>
+- 확장성이 좋은 코드를 작성 (재활용, 확장) <br>
+{: .notice--info}
