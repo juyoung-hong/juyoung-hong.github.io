@@ -2,7 +2,7 @@
 title: "HTML, CSS 기초 정리"
 classes: wide
 categories:
-  - html
+  - frontend
 tags:
   - html
   - css

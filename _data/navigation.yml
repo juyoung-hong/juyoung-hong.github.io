@@ -13,8 +13,8 @@ docs:
     children:
       - title: "Java"
         url: /categories/#java/
-      - title: "HTML"
-        url: /categories/#html/
+      - title: "FrontEnd"
+        url: /categories/#frontend/
   - title: Statistics
     children:
       - title: "Mathematics"
