@@ -214,3 +214,32 @@ function Modal(props){
 - input에 입력한 값을 가져오려면 e 사용 (e.target.value)
 - 이벤트가 상위 요소로 퍼지는 이벤트 버블링을 막고 싶으면 e.stopPropagation 사용
 - state 변경 함수는 비동기 처리됨
+
+# Class Component
+
+- constructor, super, render 정의 필요
+- state 변경시에는 this.setState({변경할 state}): 차이점만 변경함
+
+```JSX
+class Modal extends React.Component {
+  constructor(props){
+    super(props);
+    this.state = {
+      name : 'kim'
+    }
+  }
+  render(){
+    return (
+      <div>이름 {this.state.name} </div>
+    )
+  }
+}
+```
+
+# Build
+
+- html 파일을 만들기 위해서 아래와 같은 명령어 실행 필요
+
+```bash
+npm run build
+```
