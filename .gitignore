@@ -2,3 +2,7 @@ _site
 .sass-cache
 .jekyll-metadata
 Gemfile.lock
+
+Test/
+_posts/2025-08-26-career.md
+assets/images/bio-photo.old.jpg

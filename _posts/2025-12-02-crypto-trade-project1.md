@@ -51,7 +51,7 @@ tags:
 
 root directory의 하위에 'crypto-dev-compartment' 와 'crypto-prd-compartment' 를 생성하였다
 
-![create_compartment](./2025-12-02-crypto-trade-project1/create_compartment.png)
+![create_compartment]({{ juyoung-hong.github.io }}/assets/images/create_compartment.jpg)
 
 ## 권한 관리
 
@@ -71,7 +71,7 @@ Free Domain으로 crypto-dev-default-domain 을 아래와 같이 추가하였다
 
 Remote-DR 관련 설정은 서울 리전에서만 가능한 듯 보였는데, 나는 일단 DR 설정을 끄고 춘천 리전에서 생성하였다.
 
-![create_domain](./2025-12-02-crypto-trade-project1/create_domain.png)
+![create_domain]({{ juyoung-hong.github.io }}/assets/images/create_domain.jpg)
 
 ### Group 생성
 
@@ -79,7 +79,7 @@ Remote-DR 관련 설정은 서울 리전에서만 가능한 듯 보였는데, �
 
 crypto-dev-default-developer-group로 개발 환경의 개발자 그룹을 만들었고, 이 그룹에는 별도 유저는 할당하지 않았다.
 
-![create_group](./2025-12-02-crypto-trade-project1/create_group.png)
+![create_group]({{ juyoung-hong.github.io }}/assets/images/create_group.jpg)
 
 ### User 생성
 
@@ -87,7 +87,7 @@ crypto-dev-default-developer-group로 개발 환경의 개발자 그룹을 만�
 
 개발자 계정을 만들기 위해서, 이름은 동일하지만 메일 주소는 다른것으로 개발자용 계정을 생성하였고, crypto-dev-default-developer-group 그룹에 해당 유저를 할당하였다.
 
-![create_user](./2025-12-02-crypto-trade-project1/create_user.png)
+![create_user]({{ juyoung-hong.github.io }}/assets/images/create_user.jpg)
 
 ### 권한 정책 생성
 
