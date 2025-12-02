@@ -220,7 +220,7 @@ function Modal(props){
 - constructor, super, render 정의 필요
 - state 변경시에는 this.setState({변경할 state}): 차이점만 변경함
 
-```JSX
+```jsx
 class Modal extends React.Component {
   constructor(props){
     super(props);
