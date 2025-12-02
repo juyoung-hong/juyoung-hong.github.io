@@ -19,6 +19,10 @@ docs:
     children:
       - title: "Mathematics"
         url: /categories/#math/
+  - title: Projects
+    children:
+      - title: "CryptoTrade"
+        url: /categories/#cryptotrade/
   - title: ETC
     children:
       - title: "MEMO"
