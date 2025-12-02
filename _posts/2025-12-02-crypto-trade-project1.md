@@ -25,6 +25,8 @@ tags:
 
 다른 사람들의 의견대로 한번에 대단한걸 만들수는 없으니, 가장 간단한 구조부터 차근차근 만들어 나가보고자 한다.
 
+<br>
+
 # 오라클 클라우드
 
 오라클 클라우드는 개인적으로 3년전쯤 부터 사용하고 있다.
@@ -33,6 +35,8 @@ tags:
 
 집에 남아도는 노트북을 서버 컴퓨터로 활용해도 되지만, 이 간단한 시스템에 이것저것 덧붙여 보고 싶은 것도 많고 클라우드 관련해서도 공부하고 싶은 내용들이 많아서 오라클 클라우드를 활용하고자 한다.
 
+<br>
+
 ## Compartment
 
 오라클 클라우드에서는 컴파트먼트라는 편리한 기능을 지원한다.
@@ -40,6 +44,8 @@ tags:
 테넌시 내에 있는 클라우드 자원을 다시 논리적인 그룹으로 나눠서 사용할 수 있고, 클라우드 자원을 묶어서 정책을 적용하는 방식으로 관리할 수 있다.
 
 개발 컴파트먼트와 운영 컴파트 먼트를 나누어, 각  사용자별로 읽기와 쓰기 권한을 나누어 부여 하는 것도 방법이다.
+
+<br>
 
 ### Compartment 생성
 
@@ -53,6 +59,8 @@ root directory의 하위에 'crypto-dev-compartment' 와 'crypto-prd-compartment
 
 ![create_compartment]({{ juyoung-hong.github.io }}/assets/images/create_compartment.jpg)
 
+<br>
+
 ## 권한 관리
 
 오라클 클라우드에서는 유저를 그룹으로 묶고, 그룹에 정책을 통해 권한을 부여한다.
@@ -62,6 +70,8 @@ root directory의 하위에 'crypto-dev-compartment' 와 'crypto-prd-compartment
 유저와 그룹은 다시 도메인이라고 하는 더 포괄적인 개념으로 관리된다.
 
 최초 계정 생성시 Default 도메인이 자동으로 생성되며, 추가로 도메인을 생성해서 관리할 수 있다.
+
+<br>
 
 ### Domain 생성
 
@@ -73,6 +83,8 @@ Remote-DR 관련 설정은 서울 리전에서만 가능한 듯 보였는데, �
 
 ![create_domain]({{ juyoung-hong.github.io }}/assets/images/create_domain.jpg)
 
+<br>
+
 ### Group 생성
 
 - OCI 콘솔의 Identity & Security → Identity → Domains → crypto-dev-compartment → crypto-dev-default-domain → User management → Group → Create group
@@ -81,6 +93,8 @@ crypto-dev-default-developer-group로 개발 환경의 개발자 그룹을 만�
 
 ![create_group]({{ juyoung-hong.github.io }}/assets/images/create_group.jpg)
 
+<br>
+
 ### User 생성
 
 - OCI 콘솔의 Identity & Security → Identity → Domains → crypto-dev-compartment → crypto-dev-default-domain → Users → Create
@@ -88,6 +102,8 @@ crypto-dev-default-developer-group로 개발 환경의 개발자 그룹을 만�
 개발자 계정을 만들기 위해서, 이름은 동일하지만 메일 주소는 다른것으로 개발자용 계정을 생성하였고, crypto-dev-default-developer-group 그룹에 해당 유저를 할당하였다.
 
 ![create_user]({{ juyoung-hong.github.io }}/assets/images/create_user.jpg)
+
+<br>
 
 ### 권한 정책 생성
 
