@@ -107,3 +107,103 @@ crypto-dev-default-developer-group로 개발 환경의 개발자 그룹을 만�
 
 ### 권한 정책 생성
 
+- OCI 콘솔의 Identity & Security → Identity → Policies → Create Policy
+
+개발자들에게 dev 컴파트먼트에 대한 리소스 사용 권한을 주고자 아래와 같이 설정하였다.
+
+- Policy 명: crypto-dev-default-developer-group-policy
+- Policy (mannual):
+
+```bash
+allow group crypto-dev-default-developer-group to use all-resources in compartment crypto-dev-compartment
+```
+
+![create_policy]({{ juyoung-hong.github.io }}/assets/images/create_policy.jpg)
+
+<br>
+
+## 가상 클라우드 네트워크
+
+VCN은 리전 레벨의 자원으로 여러개의 가용 도메일에 걸쳐 구성되므로, 복수의 가용 도메인을 가진 리전에서 VCN을 생성하면, 고가용성 및 이중화를 구현할 수 있다.
+
+### 가상 클라우드 네트워크 생성
+
+- OCI 콘솔의 Networking → Virtual Cloud Networks → Actions → Start VCN Wizard → VCN with internet connectivity
+
+- VCN 명: crypto-dev-default-vcn
+
+![create_vcn]({{ juyoung-hong.github.io }}/assets/images/create_vcn.jpg)
+
+### 서브넷
+
+VCN을 더 잘게 분할한 하위 네트워크 자원으로 각 서브넷은 다른 CIDR 블록 범위를 가지며, 겹치지 않도록 구성된다.
+
+### 라우트 테이블
+
+VCN에서 IP 패킷의 전달 경로를 결정하는데 사용되는 자원으로 통신이 원활하려면 서브넷에 적절한 라우트 규칙을 설정해야 한다.
+
+### 시큐리티 리스트
+
+VCN 내에서 Ingress 및 Egress 트래픽에 대한 보안 규칙을 정의하는 자원이며, 같은 서브넷 안에 속한 모든 인스턴스는 동일한 보안 규칙을 적용받는다.
+
+- Stateful 규칙: 수신 규칙과 관계 없이 트래픽이 원래 호스트로 돌아갈 수 있음 (요청을 보낸 호스트로 응답이 돌아갈 수 있도록 허용하는 경우)
+- Stateless 규칙: 트래픽의 수신과 송신간의 관련성이 없어 응답을 추적하지 않는 경우 사용 (특정 포트로 들어오는 트래픽에 대해서 응답을 차단하고 싶은 경우)
+
+### 인터넷 게이트웨이
+
+VCN 내의 인스턴스가 인터넷과 통신하는 입구 역할을 하며, 이를 위해서는 퍼블릭 서브넷 내의 자원들이 public IP를 가져야 한다.
+
+### NAT 게이트웨이
+
+public IP 주소가 없는 클라우드 자원이 인터넷으로 나가는 접근을 가능하게 하는 가상 라우터이다. 
+
+private 서브넷 내의 자원들이 인터넷 접속이 필요할때 사용한다.
+
+### 서비스 게이트웨이
+
+OCI 내의 다양한 오라클 클라우드 서비스에 대한 private 접근을 허용하는 게이트 웨이이다.
+
+데이터를 인터넷에 노출시키지 않고 VCN내의 자원들이 오라클 클라우드 서비스에 안전하게 비공개 접근하게 한다.
+
+### Dynamic Routing Gateway
+
+여러 리전의 VCN 또는 온프레미스 네트워크를 private 네트워크로 연결할 때 사용하는 가상 라우터이다.
+
+## 가상 머신
+
+- 이미지: 인스턴스의 초기 상태 (운영체제 + 소프트웨어)
+- Shape: 서비스에 할당되는 자원의 단위
+- 블록 볼륨: 가상 디스크로 필요에 따라 분리 및 연결이 가능
+- 부트 볼륨: 컴퓨트 인스턴스의 부팅 이미지를 저장하는 블록 스토리지
+
+### SSH 키 페어 생성
+
+1. 로컬 컴퓨터에서 ssh key 생성 (.ssh 하위의 oci_crypto_dev로 생성함)
+
+```zsh
+ssh-keygen -t rsa -b 2048 -f /Users/jyhong/.ssh/oci_crypto_dev
+```
+
+2. OCI 콘솔의 Compute → Instances → Create Instance
+
+- instance name: crypto-dev-web-ap01
+- Image: Oracle Linux9
+- Shape: VM.Standard.E2.1.Micro
+- Primary VNIC: 위에서 생성한 VCN 및 public subnet 선택 후 자동 할당
+- SSH: 위에서 만든 ssh pub키 업로드
+- 부트볼륨: 자동 선택
+
+3. SSH 접속
+
+VS 코드의 remote 관련 config에 아래 내용을 저장하고 원격으로 접속한다.
+
+```yaml
+Host crypto-dev-web-ap01
+  HostName IP주소
+  User opc
+  IdentityFile /Users/jyhong/.ssh/oci_crypto_dev
+```
+
+아래 이미지와 같이 정상적으로 접속이 가능함을 확인했다.
+
+![connect_vm]({{ juyoung-hong.github.io }}/assets/images/connect_vm.jpg)
