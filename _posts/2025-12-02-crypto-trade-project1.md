@@ -207,3 +207,9 @@ Host crypto-dev-web-ap01
 아래 이미지와 같이 정상적으로 접속이 가능함을 확인했다.
 
 ![connect_vm]({{ juyoung-hong.github.io }}/assets/images/connect_vm.jpg)
+
+## 결과
+
+최종적으로 아래 이미지와 같은 구조로 클라우드 리소스 생성을 완료했다.
+
+![oci_20251207]({{ juyoung-hong.github.io }}/assets/images/oci_20251207.jpg)
