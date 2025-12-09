@@ -144,14 +144,92 @@ git config --global user.name "Juyoung Hong"
 git config --global user.email "hjy_stat@naver.com"
 ```
 
-그리고 구성한 git repo를 클론해 왔다.
+이후 application을 사용할 appuser 계정을 생성하였고, appuser 계정에 sudoer 권한을 추가하였다. 이후 어플리케이션 설정은 appuser로 진행하였다.
 
 ```bash
-git clone https://github.com/CryptoAutoTradingTeam/CryptoAutoTradeSystem.git
+sudo useradd appuser
+sudo passwd appuser
+sudo visudo
+su appuser
+```
+
+배포용 서버를 구성하고 git repo를 클론해 왔다.
+
+```bash
+sudo mkdir /srv/website
+cd /srv/website
+sudo git clone https://github.com/CryptoAutoTradingTeam/CryptoAutoTradeSystem.git
 ```
 
 ### npm 설치
 
 이후 서비스를 실행하기 위해서는 npm이 필요했다.
 오라클 리눅스에서는 아래의 명령어로 npm을 설치한다.
+
+```bash
+sudo dnf config-manager --set-enabled ol9_appstream
+sudo dnf install nodejs
+sudo dnf module enable nodejs:20
+sudo dnf update nodejs
+```
+
+### build 및 배포
+
+빌드를 위해 front 쪽 소스코드로 이동하여, dependency 설치 및 빌드를 진행한다.
+
+```bash
+cd CryptoAutoTradeSystem/frontend
+sudo npm install
+sudo npm run build
+```
+
+이후 배포를 위해 nginx를 설치해준다.
+
+```bash
+sudo dnf install -y nginx
+sudo systemctl enable --now nginx.service
+systemctl status nginx.service
+```
+
+이후 아래 명령어로 OS 방화벽을 해제하고 테스트 해본다.
+
+```bash
+sudo firewall-cmd --add-service=http --permanent
+sudo firewall-cmd --reload
+curl http://$(hostname -i)
+```
+
+이후 배포하고자하는 build 파일에 대해 권한을 설정한다.
+
+```bash
+sudo chown -R nginx:nginx /srv/website/CryptoAutoTradeSystem/frontend/dist
+sudo chcon -Rt httpd_sys_content_t /srv/website/CryptoAutoTradeSystem/frontend/dist
+```
+
+/etc/nginx/conf.d/default.conf 파일을 열고 아래와 같이 작성 후 저장한다.
+
+```text
+server {
+  server_name   $(hostname -i) $IP;
+  root           /srv/website/CryptoAutoTradeSystem/frontend/dist;
+  index          index.html;
+}
+```
+
+마지막으로 변경된 conf 파일로 다시 nginx를 기동하고 index 페이지가 잘 나오는지 확인하였다.
+
+```bash
+sudo systemctl restart nginx
+curl http://$(hostname -i)
+```
+
+## VM security list 설정 및 테스트
+
+- OCI 콘솔의 Networking → Virtual Cloud Networks → crypto-prd-default-vcn → Security → Create Security List
+  - Name: crypto-prd-web-securitylist
+  - Contents: 0.0.0.0/0 에 대해 TCP 통신 80 Port Ingress rule 추가
+
+- OCI 콘솔의 crypto-prd-default-vcn → Subnets → crypto-prd-web-subnet → Security → Add Security List → crypto-prd-web-securitylist 선택 후 저장
+
+## Custom Image 생성
 
