@@ -307,7 +307,7 @@ OCI의 컨테이너 레지스트리는 사용하는데는 비용이 들지 않�
 
 - OCI 콘솔의 Developer Services → Container Registry → Create Repository
   - access: private
-  - repo name: crypto-prd-repo/frontend-desktop
+  - repo name: crypto-prd-repo
 
 ## OCI 인증 토큰 생성
 
@@ -323,16 +323,16 @@ OCI의 컨테이너 레지스트리는 사용하는데는 비용이 들지 않�
 ```zsh
 sudo dnf update -y
 sudo yum install yum-utils dnf-utils zip unzip -y
-dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
-dnf remove -y runc
-dnf install -y docker-ce --nobest
-systemctl enable docker.service
-systemctl start docker.service
+sudo dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
+sudo dnf remove -y runc
+sudo dnf install -y docker-ce --nobest
+sudo systemctl enable docker.service
+sudo systemctl start docker.service
 ```
 
 ## 컨테이너 레지스트리 로그인
 
-먼저 아래의 명령어로 테넌시 네임스페이스를 확인한다. PW는 위에서 만든 토큰이다.
+먼저 아래의 명령어로 테넌시 네임스페이스를 확인한다.
 
 사용자 정보는 OCI 웹콘솔의 Profile을 클릭하면 나오는 My profile 화면에서 확인할 수 있다.
 
@@ -341,10 +341,203 @@ oci os ns get
 ```
 
 이후 아래 명령어로 컨테이너 레지스트리에 로그인한다.
+
 유저네임을 물어보면 <테넌시 네임스페이스>/<사용자> 로 답한다.
+
+PW는 위에서 만든 토큰이다.
 
 private으로 컨테이너 레지스트리를 만들었기 때문에 public 환경에서는 접근할 수 없고, bastion 등 oci private network에 위치한 VM 통해서만 접근이 가능하다.
 
 ```zsh
-docker login ap-chuncheon-1.ocir.co
+docker login ap-chuncheon-1.ocir.io
 ```
+
+<br>
+
+## Git clone
+
+생성된 소스코드를 bastion은 가지고 있지 않으므로 일단 git에 올라간 코드를 pull 해와야 했다.
+
+<br>
+
+### git install on oracle linux8
+
+먼저 bastion에 git을 설치했다.
+
+```zsh
+sudo dnf install git -y
+git --version
+```
+
+<br>
+
+### git config
+
+git이 정상적으로 설치된 이후에는 git 관련 설정을 진행했다.
+
+```zsh
+git config --global user.name <username>
+git config --global user.email <email>
+git config --list
+```
+
+<br>
+
+## Docker image build
+
+이후 소스코드를 클론해와서 docker image를 만들어보았다.
+
+```zsh
+git clone https://github.com/CryptoAutoTradingTeam/Frontend-Desktop.git
+git checkout feat/login-page-setup
+docker run --privileged --rm tonistiigi/binfmt --install all
+docker build --platform linux/arm64 -t frontend-desktop:v1.0 .
+docker images
+```
+
+도커 명령어 실행 과정에 권한 관련 이슈가 있어서, 아래 명령어로 opc 유저를 docker 그룹에 추가하니, 잘 동작했다.
+
+```zsh
+sudo chown opc:docker /var/run/docker.sock
+```
+
+또 배포하다가 보니, 도커 빌드는 amd 기반으로 하고, arm 장치에 올리니 crash back loop 문제가 발생하여, 아래 명령어로 빌드를 수정했고, docker 파일도 일부 수정했다.
+
+```zsh
+docker run --privileged --rm tonistiigi/binfmt --install all
+docker build --platform linux/arm64 -t frontend-desktop:v1.0 .
+```
+
+```dockerfile
+# ==========================================================
+# STAGE 1: 빌드 스테이지 (Build Stage)
+# ==========================================================
+# Node.js LTS 버전의 Alpine 리눅스 이미지를 사용합니다.
+FROM --platform=$BUILDPLATFORM node:20-alpine AS builder
+
+# 작업 디렉토리 설정
+WORKDIR /app
+
+# package.json 및 lock 파일을 복사하고 의존성을 설치합니다.
+# 이 과정이 분리되어야 node_modules가 변경되지 않는 한 캐시를 사용할 수 있습니다.
+COPY package*.json ./
+RUN npm install
+
+# 나머지 소스 코드 복사
+COPY . .
+
+# Vite 앱 빌드
+# 결과물은 /app/dist 에 생성됩니다.
+RUN npm run build
+
+
+# ==========================================================
+# STAGE 2: 실행 스테이지 (Run Stage) - Nginx 기반
+# ==========================================================
+# Nginx의 공식 stable Alpine 이미지를 사용합니다. (매우 작음)
+FROM --platform=linux/arm64 nginx:stable-alpine
+
+# OKE 배포에 적합하도록 Nginx 설정을 덮어쓰기 위해 설정 파일을 복사합니다.
+# 이 파일은 아래 2.1 단계에서 작성합니다.
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# 빌드 스테이지에서 생성된 정적 파일(dist 내용)을 Nginx의 웹 루트로 복사합니다.
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Nginx 기본 포트 80 노출
+EXPOSE 80
+
+# 컨테이너 시작 시 Nginx 실행
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+<br>
+
+## Docker image push
+
+이제 만들어진 컨테이너 이미지에 태그를 붙이고, push 해보았다.
+
+```zsh
+docker tag frontend-desktop:v1.0 ap-chuncheon-1.ocir.io/axqyrowq4jay/crypto-prd-repo/frontend-desktop
+docker push ap-chuncheon-1.ocir.io/axqyrowq4jay/crypto-prd-repo/frontend-desktop
+```
+
+<br>
+
+## 쿠버네티스 배포
+
+<br>
+
+### 쿠버네티스 시크릿 파일 생성
+
+ocir에 쿠버네티스 클러스터가 접근할 수 있도록 아래 명령어를 통해 secret을 생성한다.
+
+```zsh
+kubectl create secret docker-registry ocirsecret --docker-server=ap-chuncheon-1.ocir.io --docker-username='테넌시네임스페이스/OCI사용자이름' --docker-password='인증토큰값'
+kubectl get secrets
+```
+
+<br>
+
+### 쿠버네티스 manifest 생성
+
+기본적으로 nginx 배포에서 사용했던 manifest에서 컨테이너 이미지 부분을 수정하여 아래와 같이 작성하였다.
+
+```yaml
+# frontend-desktop.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fe-desktop-deployment
+spec:
+  selector:
+    matchLabels:
+      app: fe-desktop
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: fe-desktop
+    spec:
+      containers:
+      - name: fe-desktop
+        image: ap-chuncheon-1.ocir.io/axqyrowq4jay/crypto-prd-repo/frontend-desktop:latest
+        imagePullPolicy: Always
+        ports:
+        - name: fe-desktop
+          containerPort: 80
+          protocol: TCP
+      imagePullSecrets:
+        - name: ocirsecret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cats-loadbalancer
+  annotations:
+    oci.oraclecloud.com/load-balancer-type: "lb"
+    service.beta.kubernetes.io/oci-load-balancer-shape: "flexible"
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-min: "10"
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-max: "10"
+spec:
+  selector:
+    app: fe-desktop
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+  - name: https
+    port: 443
+    targetPort: 80
+```
+
+작성된 매니페스트 파일을 가지고 아래 명령어를 수행하였고 아래 이미지와 같이 성공적으로 배포되었음을 확인하였다.
+
+```zsh
+kubectl create -f ./frontend-desktop.yaml
+kubectl get pods
+```
+
+![test_deploy]({{ juyoung-hong.github.io }}/assets/images/test_deploy.jpg)
