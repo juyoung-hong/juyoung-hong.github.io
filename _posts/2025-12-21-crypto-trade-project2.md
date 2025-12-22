@@ -64,7 +64,7 @@ java -version
 
 ```bash
 wget https://get.jenkins.io/war-stable/2.528.3/jenkins.war
-JENKINS_HOME=jenkins java -jar jenkins.war --httpPort=8080 &
+JENKINS_HOME=jenkins nohup java -jar jenkins.war --httpPort=8080 > jenkins.log 2>&1 &
 ```
 
 이후에 bastion 8080 포트로 접속할 수 있도록 OCI의 security list에 8080 포트를 추가하고 아래 명령어로 OS 방화벽도 해제한다.
@@ -142,3 +142,106 @@ Jenkins → Jenkins 관리 → Credentials → Add credentials → New Credentia
   - ID: GITHUBTOKEN
 
 한번더 Username with password로 생성해서 github 계정 정보를 저장한다.
+
+이때 password 대신 PAT를 사용 해야 이후에 private repo에 접근할 때 문제가 없다.
+
+Jenkins → Jenkins 관리 → System → GitHub → Add GitHub Server 에서 아래와 같이 정상적으로 연동 되는 것을 test하고 저장한다.
+
+![jenkins_git_test]({{ juyoung-hong.github.io }}/assets/images/jenkins_git_test.jpg)
+
+<br>
+
+## Jenkins Webhook 테스트
+
+Jenkins → 새로운 Item
+  - name: github-fe-desktop-webhook
+  - type: Freestyle project
+  - 소스코드관리: Git
+  - Repositories: private repository URL
+  - Credentials: github user & pw
+  - branches to build: */main
+  - Triggers: GitHub hook trigger for GITScm polling
+
+이후 깃허브의 연동하려고 했던 private repository의 Settings → Webhooks에 가면 Webhook이 생성되어 있다.
+
+<br>
+
+# Jenkins를 통한 배포
+
+Jenkins → 새로운 Item
+  - name: frontend-desktop-cicd
+  - type: pipeline
+  - GitHub project: private repository URL
+
+```pipeline.txt
+//------------------------------------------------------------------------------
+// git clone -> 도커 빌드 -> Container Registry 이미지 push -> oke 배포 단계로 수행
+//------------------------------------------------------------------------------
+
+pipeline {
+    agent any
+    stages {
+        stage('Clone Git') {
+            steps {
+                script{
+                    sh "pwd"
+                    sh "rm -rf Frontend-Desktop"
+                    sh "git clone git@github.com:CryptoAutoTradingTeam/Frontend-Desktop.git"
+                }
+            }
+        }
+        stage('Build Container') {
+            steps{
+                dir('Frontend-Desktop'){
+                    sh "pwd"
+                    sh "docker container ls"
+                    sh "docker run --privileged --rm tonistiigi/binfmt --install all"
+                    sh "docker buildx rm arm64-builder || true"
+                    sh "docker buildx create --name arm64-builder --driver docker-container --use"
+                    sh "docker buildx inspect --bootstrap"
+                    sh "docker buildx build --platform linux/arm64 -t frontend-desktop:v1.$BUILD_NUMBER --load ."
+                    sh "docker buildx rm arm64-builder"
+                    sh "docker images"
+                }
+            }
+        }
+        stage('Push to Container Registry') {
+            steps {
+                script {
+                    sh "docker login ap-chuncheon-1.ocir.io"
+                    sh "docker tag frontend-desktop:v1.$BUILD_NUMBER ap-chuncheon-1.ocir.io/axqyrowq4jay/crypto-prd-repo/frontend-desktop:latest"
+                    sh "docker push ap-chuncheon-1.ocir.io/axqyrowq4jay/crypto-prd-repo/frontend-desktop"
+                    sh "docker images"
+                }
+            }
+        }
+        stage('Deploy OKE') {
+            steps{
+                dir('Frontend-Desktop') {
+                    sh "kubectl rollout restart deployment fe-desktop-deployment"
+                    sh "kubectl get pods"
+                    sh "echo 'done'"
+                }
+            }
+        }
+    }
+}
+```
+
+위 설정을 저장한 이후 다시 github-fe-desktop-webhook로 돌아와서 구성 → 빌드 후 조치 → Build other projects
+  - Projects to build: frontend-desktop-cicd
+  - Trigger only if build is stable 을 선택하고 저장한다. 
+
+<br>
+
+## CI/CD 테스트
+
+Gemini를 통해 토스쪽 화면을 보여주면서 로그인 화면을 좀 더 멋지게 변경해달라고 했다.
+
+이후 해당 내용을 커밋하고, main branch에 병합해보았다.
+
+jenkins를 통해서 clone하면 username을 요구한다거나, docker 단계에서 오류가 발생하는 문제가 있었으나 최종적으로 위의 파이프라인 커맨드로 아래와 같이 성공을 완료하였다.
+
+정상적으로 파이프라인이 성공한 뒤, 로드밸런서 쪽으로 접속하니, 성공적으로 변경된 UI가 노출되는 것까지 확인하였다.
+
+![jenkins_build_result]({{ juyoung-hong.github.io }}/assets/images/jenkins_build_result.jpg)
