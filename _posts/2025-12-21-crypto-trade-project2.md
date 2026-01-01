@@ -173,7 +173,7 @@ Jenkins → 새로운 Item
   - type: pipeline
   - GitHub project: private repository URL
 
-```pipeline.txt
+```Jenkinsfile
 //------------------------------------------------------------------------------
 // git clone -> 도커 빌드 -> Container Registry 이미지 push -> oke 배포 단계로 수행
 //------------------------------------------------------------------------------
