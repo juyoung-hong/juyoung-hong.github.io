@@ -33,6 +33,8 @@ uv init --python 3.12
 uv add fastapi uvicorn
 ```
 
+<br>
+
 # 로그인 (인증, 인가) 구현
 
 아래와 같은 폴더 구조를 만들어주고, 필요한 패키지를 설치해주었다.
@@ -74,11 +76,15 @@ uv run uvicorn app.main:app --reload
 uv run pytest
 ```
 
+<br>
+
 # ADB 생성
 
 로그인 기능을 구현하였으니 로그인 및 회원 정보를 저장할 수 있도록 DB를 연결 해야 했고 오라클 프리티어에서 제공하는 ADB를 활용하고자 한다.
 
 ADB가 위치할 Subnet을 생성하고, ADB에 대한 private-endpoint 구성 및 연결 작업을 진행해줄 것이다.
+
+<br>
 
 ## DB Subent 생성
 
@@ -86,6 +92,8 @@ ADB가 위치할 Subnet을 생성하고, ADB에 대한 private-endpoint 구성 �
   - Name: dbs
   - IPv4 CIDR Block: 기존에 생성된 subnet들과 겹치지 않도록 IP 대역 구성
   - Subnet Access: Private Subnet
+
+<br>
 
 ## Security List 구성
 
@@ -96,6 +104,8 @@ ADB가 위치할 Subnet을 생성하고, ADB에 대한 private-endpoint 구성 �
 
 - OCI 콘솔의 Networking → Virtual Cloud Networks → crypto-prd-default-vcn → Subnets → dbs → Security → Add Security List
   - seclist-dbs
+
+<br>
 
 ## Autonomous DB 생성
 
@@ -108,6 +118,8 @@ ADB가 위치할 Subnet을 생성하고, ADB에 대한 private-endpoint 구성 �
     - Virtual Cloud Network: crypto-prd-default-vcn
 
 DB 생성 중에 보니, free-tier라서 그런지 private endpoint는 만들수 없어서 위의 서브넷 생성 및 시큐리티 리스트 작업은 필요가 없었다.
+
+<br>
 
 ## dbeaver 설치 및 접속
 
@@ -136,22 +148,26 @@ jdbc:oracle:thin:@{Database 이름_high}?TNS_ADMIN={Wallet Directory}
 
 Test Connect를 클릭해보고, Connected! 메시지를 보면 정상적으로 연결된 것이다.
 
+<br>
+
 # User 스키마 생성 및 테이블 생성
 
 아래 명령어로 웹에서 공통적으로 사용할 스키마를 생성하였고,
 
-```SQL
+```sql
 CREATE USER WEB_COMMON IDENTIFIED BY PW;
 ```
 
 아래 명령어로 ADB에서 사용할 적절한 권한을 부여하였다.
 
-```SQL
+```sql
 GRANT CREATE SESSION, CREATE TABLE, CREATE VIEW, CREATE SEQUENCE TO WEB_COMMON;
 ALTER USER WEB_COMMON QUOTA UNLIMITED ON DATA;
 ```
 
 GEMINI에게 요청해서 User 테이블에서 사용할 테이블 스키마를 구성하고, 인덱스 설정, update trigger 설정등을 진행하였다.
+
+<br>
 
 # 생성된 DB 및 테이블 기준으로 코드 수정
 
@@ -167,11 +183,13 @@ uv add oracledb
 
 db 접속이 성공적으로 가능한 것을 확인하고, 이전에 작성한 코드들에 db 의존성을 주입하여 코드를 완성하였다.
 
+<br>
+
 # TEST
 
 마지막으로 아래 명령어로 TEST 용도의 스키마를 생성해주었다.
 
-```SQL
+```sql
 CREATE USER WEB_COMMON_TEST IDENTIFIED BY PW;
 GRANT CREATE SESSION, CREATE TABLE, CREATE VIEW, CREATE SEQUENCE TO WEB_COMMON_TEST;
 ALTER USER WEB_COMMON_TEST QUOTA UNLIMITED ON DATA;
@@ -185,11 +203,15 @@ ALTER USER WEB_COMMON_TEST QUOTA UNLIMITED ON DATA;
 PYTHONPATH=. uv run pytest 
 ```
 
+<br>
+
 # 배포
+
+<br>
 
 ## Docker file 작성
 
-```Docker file
+```Dockerfile
 # 1. 빌드 스테이지 (uv를 활용한 의존성 추출)
 FROM python:3.12-slim-bookworm AS builder
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -246,6 +268,8 @@ docker buildx rm arm64-builder
 docker images
 ```
 
+<br>
+
 ## Docker 이미지 Push
 
 잘 빌드가 완료되었다면 아래 명령어로 Container Resitry에 Push 한다.
@@ -256,6 +280,8 @@ docker tag backend-web:v1.$BUILD_NUMBER ap-chuncheon-1.ocir.io/axqyrowq4jay/cryp
 docker push ap-chuncheon-1.ocir.io/axqyrowq4jay/crypto-prd-repo/backend-web
 docker images
 ```
+
+<br>
 
 ## Deployments.yaml 파일 작성 및 최초 배포
 
@@ -314,9 +340,13 @@ kubectl exec -it fe-desktop-deployment-{frontend-pod명} -- /bin/sh # FE 포드 
 curl -v http://be-web-service:8000/ # 요청을 보내 정상응답을 받는지 확인
 ```
 
+<br>
+
 # Jenkins CICD 설정
 
 이제 Jenkins를 통해서 백엔드 부분도 배포할 수 있도록 Jenkins 설정으로 들어갔다.
+
+<br>
 
 ## Jenkins Webhook 설정
 
@@ -333,6 +363,8 @@ Jenkins → 새로운 Item
 
 ![jenkins_webhook_test]({{ juyoung-hong.github.io }}/assets/images/jenkins_webhook_test.jpg)
 
+<br>
+
 ## Jenkins 파이프라인 생성
 
 Jenkins → 새로운 Item
@@ -340,7 +372,7 @@ Jenkins → 새로운 Item
   - type: pipeline
   - GitHub project: private repository URL
 
-```pipeline.txt
+```groovy
 //------------------------------------------------------------------------------
 // git clone -> 도커 빌드 -> Container Registry 이미지 push -> oke 배포 단계로 수행
 //------------------------------------------------------------------------------
@@ -398,6 +430,8 @@ pipeline {
 위 설정을 저장한 이후 다시 github-be-web-webhook로 돌아와서 구성 → 빌드 후 조치 → Build other projects
   - Projects to build: backend-web-cicd
   - Trigger only if build is stable 을 선택하고 저장한다. 
+
+<br>
 
 ## 테스트
 
