@@ -184,3 +184,231 @@ ALTER USER WEB_COMMON_TEST QUOTA UNLIMITED ON DATA;
 ```bash
 PYTHONPATH=. uv run pytest 
 ```
+
+# 배포
+
+## Docker file 작성
+
+```Docker file
+# 1. 빌드 스테이지 (uv를 활용한 의존성 추출)
+FROM python:3.12-slim-bookworm AS builder
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+WORKDIR /app
+# 환경변수 설정: 가상환경 생성 방지 및 시스템 파이썬 사용
+ENV UV_SYSTEM_PYTHON=1
+
+COPY pyproject.toml uv.lock ./
+RUN uv pip install --no-cache -r pyproject.toml
+
+# 2. 실행 스테이지
+FROM python:3.12-slim-bookworm
+WORKDIR /app
+
+# Oracle Instant Client 실행에 필요한 libaio1 설치 (Oracle DB 필수)
+RUN apt-get update && apt-get install -y libaio1 && rm -rf /var/lib/apt/lists/*
+
+# 빌드 스테이지에서 설치된 패키지 복사
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# 소스 코드 복사
+COPY . .
+
+# --- Oracle Wallet 설정 ---
+# 1. Wallet 파일을 담을 디렉토리 생성
+RUN mkdir -p /app/oracle_wallet
+# 2. 로컬의 Wallet 파일들을 컨테이너로 복사 (로컬의 wallet 폴더 경로 확인 필요)
+COPY ./Wallet_CATSDB /app/oracle_wallet/
+# 3. Oracle 관련 환경 변수 설정 (TNS_ADMIN이 Wallet 위치를 가리켜야 함)
+ENV TNS_ADMIN=/app/oracle_wallet
+# -------------------------
+
+# 보안을 위한 비관리자 유저 설정
+RUN useradd -m appuser && chown -R appuser /app
+USER appuser
+
+EXPOSE 8000
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+지난번 고생했던 AMD 아키텍처의 VM에서 빌드하고, ARM 아키텍처의 VM에서 배포하는 경우에 대해서 문제가 없도록 작성하였다.
+
+이후 아래 명령어로 같은 상황에 문제가 없도록 도커 이미지를 빌드한다.
+
+```bash
+docker run --privileged --rm tonistiigi/binfmt --install all
+docker buildx create --name arm64-builder --driver docker-container --use
+docker buildx inspect --bootstrap
+docker buildx build --platform linux/arm64 -t backend-web:v1.$BUILD_NUMBER --load .
+docker buildx rm arm64-builder
+docker images
+```
+
+## Docker 이미지 Push
+
+잘 빌드가 완료되었다면 아래 명령어로 Container Resitry에 Push 한다.
+
+```bash
+docker login ap-chuncheon-1.ocir.io
+docker tag backend-web:v1.$BUILD_NUMBER ap-chuncheon-1.ocir.io/axqyrowq4jay/crypto-prd-repo/backend-web:latest
+docker push ap-chuncheon-1.ocir.io/axqyrowq4jay/crypto-prd-repo/backend-web
+docker images
+```
+
+## Deployments.yaml 파일 작성 및 최초 배포
+
+마지막으로 아래와 같이 backend에 대한 deployments.yaml 파일을 작성하고 저장한 후, 아래 명령어로 배포를 진행한다.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: be-web-deployment
+spec:
+  selector:
+    matchLabels:
+      app: be-web
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: be-web
+    spec:
+      containers:
+      - name: be-web
+        image: ap-chuncheon-1.ocir.io/axqyrowq4jay/crypto-prd-repo/backend-web:latest
+        imagePullPolicy: Always
+        ports:
+        - name: fe-desktop
+          containerPort: 8000
+          protocol: TCP
+      imagePullSecrets:
+      - name: ocirsecret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: be-web-service  # 이 이름이 내부 접속 주소가 됩니다.
+spec:
+  selector:
+    app: be-web
+  type: ClusterIP      # LoadBalancer 대신 ClusterIP 사용
+  ports:
+  - port: 8000           # 서비스 포트
+    targetPort: 8000   # 컨테이너 포트
+```
+
+```bash
+kubectl apply -f ./backend-web.yaml
+kubectl get pods
+```
+
+정상적으로 pod가 떠있는 것을 확인하고, frontend와 통신이 되는지 아래 명령어로 확인하였다.
+
+```bash
+kubectl get endpoints be-web-service # Endpoint 항목에 private IP가 잘 나오는지 확인
+kubectl logs -f be-web-deployment-{backend-pod명} # backend pod의 로그를 실시간으로 확인하며
+kubectl exec -it fe-desktop-deployment-{frontend-pod명} -- /bin/sh # FE 포드 내부 접속 후
+curl -v http://be-web-service:8000/ # 요청을 보내 정상응답을 받는지 확인
+```
+
+# Jenkins CICD 설정
+
+이제 Jenkins를 통해서 백엔드 부분도 배포할 수 있도록 Jenkins 설정으로 들어갔다.
+
+## Jenkins Webhook 설정
+
+Jenkins → 새로운 Item
+  - name: github-be-web-webhook
+  - type: Freestyle project
+  - 소스코드관리: Git
+  - Repositories: private repository URL
+  - Credentials: github user & pw
+  - branches to build: */main
+  - Triggers: GitHub hook trigger for GITScm polling
+
+이후 깃허브의 연동하려고 했던 private repository의 Settings → Webhooks에 가면 Webhook이 생성되어 있다.
+
+![jenkins_webhook_test]({{ juyoung-hong.github.io }}/assets/images/jenkins_webhook_test.jpg)
+
+## Jenkins 파이프라인 생성
+
+Jenkins → 새로운 Item
+  - name: backend-web-cicd
+  - type: pipeline
+  - GitHub project: private repository URL
+
+```pipeline.txt
+//------------------------------------------------------------------------------
+// git clone -> 도커 빌드 -> Container Registry 이미지 push -> oke 배포 단계로 수행
+//------------------------------------------------------------------------------
+
+pipeline {
+    agent any
+    stages {
+        stage('Clone Git') {
+            steps {
+                script{
+                    sh "pwd"
+                    sh "rm -rf Backend-Web"
+                    sh "git clone git@github.com:CryptoAutoTradingTeam/Backend-Web.git"
+                }
+            }
+        }
+        stage('Build Container') {
+            steps{
+                dir('Backend-Web'){
+                    sh "pwd"
+                    sh "docker container ls"
+                    sh "docker run --privileged --rm tonistiigi/binfmt --install all"
+                    sh "docker buildx rm arm64-builder || true"
+                    sh "docker buildx create --name arm64-builder --driver docker-container --use"
+                    sh "docker buildx inspect --bootstrap"
+                    sh "docker buildx build --platform linux/arm64 -t backend-web:v1.$BUILD_NUMBER --load ."
+                    sh "docker buildx rm arm64-builder"
+                    sh "docker images"
+                }
+            }
+        }
+        stage('Push to Container Registry') {
+            steps {
+                script {
+                    sh "docker login ap-chuncheon-1.ocir.io"
+                    sh "docker tag backend-web:v1.$BUILD_NUMBER ap-chuncheon-1.ocir.io/axqyrowq4jay/crypto-prd-repo/backend-web:latest"
+                    sh "docker push ap-chuncheon-1.ocir.io/axqyrowq4jay/crypto-prd-repo/backend-web"
+                    sh "docker images"
+                }
+            }
+        }
+        stage('Deploy OKE') {
+            steps{
+                dir('Backend-Web') {
+                    sh "kubectl rollout restart deployment be-web-deployment"
+                    sh "kubectl get pods"
+                    sh "echo 'done'"
+                }
+            }
+        }
+    }
+}
+```
+
+위 설정을 저장한 이후 다시 github-be-web-webhook로 돌아와서 구성 → 빌드 후 조치 → Build other projects
+  - Projects to build: backend-web-cicd
+  - Trigger only if build is stable 을 선택하고 저장한다. 
+
+## 테스트
+
+이제 CICD도 정상적으로 동작하는지 확인하기 위해서, backend-web 소스코드에 변경사항을 반영하고 main에 push하였다.
+
+main branch에 소스코드가 반영되고 나니, 정상적으로 빌드가 시작됐고, 몇분 기다린 뒤 정상적으로 빌드까지 완료됨을 확인하였다.
+
+![jenkins_build_test]({{ juyoung-hong.github.io }}/assets/images/jenkins_build_test.jpg)
+
+서비스가 배포된 이후에 API를 호출하여 회원가입 테스트를 진행해보았고, 그 이후 DB에 데이터가 잘 적재되었는지 확인하였다.
+
+아래 이미지와 같이 DB에도 데이터가 잘 적재된 것을 확인하고 테스트를 마쳤다.
+
+![signup_test_db_result]({{ juyoung-hong.github.io }}/assets/images/signup_test_db_result.jpg)
