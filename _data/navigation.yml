@@ -25,5 +25,7 @@ docs:
         url: /categories/#cryptotrade/
   - title: ETC
     children:
+      - title: "VibeCoding"
+        url: /categories/#vibecoding/
       - title: "MEMO"
         url: /categories/#memo/
