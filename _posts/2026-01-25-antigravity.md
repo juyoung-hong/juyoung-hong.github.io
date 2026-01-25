@@ -1,5 +1,5 @@
 ---
-title: "Antigravity1 - "
+title: "Antigravity1 - 사용법 숙지"
 classes: wide
 categories:
   - vibecoding
