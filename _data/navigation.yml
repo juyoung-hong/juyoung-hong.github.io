@@ -9,23 +9,19 @@ main:
     url: /about/
 
 docs:
-  - title: Computer Science
+  - title: Infra
     children:
-      - title: "Java"
-        url: /categories/#java/
-      - title: "FrontEnd"
-        url: /categories/#frontend/
-  - title: Statistics
+      - title: "Infra"
+        url: /categories/#infra/
+  - title: Software
     children:
-      - title: "Mathematics"
-        url: /categories/#math/
-  - title: Projects
+      - title: "Front-end"
+        url: /categories/#front-end/
+      - title: "Back-end"
+        url: /categories/#back-end/
+      - title: "AI/ML"
+        url: /categories/#ai-ml/
+  - title: Security
     children:
-      - title: "CryptoTrade"
-        url: /categories/#cryptotrade/
-  - title: ETC
-    children:
-      - title: "VibeCoding"
-        url: /categories/#vibecoding/
-      - title: "MEMO"
-        url: /categories/#memo/
+      - title: "Security"
+        url: /categories/#security/
