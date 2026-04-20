@@ -21,6 +21,10 @@ docs:
         url: /categories/#back-end/
       - title: "AI/ML"
         url: /categories/#ai-ml/
+  - title: DevOps
+    children:
+      - title: "DevOps"
+        url: /categories/#devops/
   - title: Security
     children:
       - title: "Security"
