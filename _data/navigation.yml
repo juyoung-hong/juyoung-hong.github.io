@@ -29,3 +29,7 @@ docs:
     children:
       - title: "Security"
         url: /categories/#security/
+  - title: Study
+    children:
+      - title: "CodingTest"
+        url: /categories/#codingtest/
