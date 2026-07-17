@@ -21,15 +21,7 @@ docs:
         url: /categories/#back-end/
       - title: "AI/ML"
         url: /categories/#ai-ml/
-  - title: DevOps
-    children:
-      - title: "DevOps"
-        url: /categories/#devops/
-  - title: Security
-    children:
-      - title: "Security"
-        url: /categories/#security/
   - title: Study
     children:
-      - title: "CodingTest"
-        url: /categories/#codingtest/
+      - title: "Coding"
+        url: /categories/#coding/

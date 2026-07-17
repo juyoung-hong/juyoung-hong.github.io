@@ -1,8 +1,8 @@
 ---
-title: "Coding Test 공부 - Java"
+title: "Coding 공부 - Java"
 classes: wide
 categories:
-  - codingtest
+  - coding
 tags:
   - java
 ---
